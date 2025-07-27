@@ -5,9 +5,9 @@ import requests
 API_KEY = "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"
 API_URL = "https://api.perplexity.ai/chat/completions"
 
-# ✅ Valid models: sonar, sonar-pro, sonar-reasoning, sonar-deep-research
+# ✅ Choose a valid model
 MODEL = "sonar-pro"
-USE_ONLINE = False  # Set True if your key supports real-time search
+USE_ONLINE = False  # Set True if your key supports "sonar-pro-online"
 
 def ask_perplexity(question):
     model_name = f"{MODEL}-online" if USE_ONLINE else MODEL
@@ -32,6 +32,7 @@ def ask_perplexity(question):
         response.raise_for_status()
         result = response.json()
         return result["choices"][0]["message"]["content"].strip()
+
     except requests.exceptions.HTTPError as http_err:
         try:
             error_message = response.json().get("error", {}).get("message", response.text)
@@ -43,24 +44,24 @@ def ask_perplexity(question):
 
 # 🚀 Streamlit UI
 st.set_page_config(page_title="Perplexity Chatbot", page_icon="🤖")
-
 st.title("🤖 Perplexity AI Chatbot")
-st.markdown("Ask me anything powered by **Perplexity API**.")
 
-# Chat history
+# Initialize chat history
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# User input
-user_input = st.text_input("Your question:", key="user_input")
+# Input box and submit button
+with st.form("chat_form"):
+    user_input = st.text_input("Your question:", key="input")
+    submitted = st.form_submit_button("Ask")
 
-if user_input:
-    reply = ask_perplexity(user_input)
+# If submitted, process the input
+if submitted and user_input:
+    response = ask_perplexity(user_input)
     st.session_state.history.append(("You", user_input))
-    st.session_state.history.append(("Bot", reply))
-    st.experimental_rerun()
+    st.session_state.history.append(("Bot", response))
 
-# Display chat
+# Display chat history
 for role, message in reversed(st.session_state.history):
     if role == "You":
         st.markdown(f"**🧑 {role}:** {message}")
